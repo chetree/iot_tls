@@ -1,13 +1,3 @@
-# Middleware Application for IoT Device
-
-The purpose of the following document is to cover how the middleware for IoT was designed as well as providing the necessary tools  for future development. There are three folders containing source code, one for each language used in this application, namely C++, Python and Golang. After providing the usual "get started" and "prerequisites" sections, the rest of this document will provide the rationale for using the three languages and how the code is structured.
-
-## Overview of Project
-
-The main purpose of this project is to offer a proof of concept of how IoT devices can be integrated securely and registered with Cira. In particular, the middleware's role is to provide a simple API for applications to establish a two-way authenticated TLS session with an MQTT broker. To fulfill this role, we must interact with the SIM card through the modem to obtain certificates loaded on the SIM card, as well as to perform signatures. The main use case for the middleware is shown in the sequence diagram below between steps 7 and 9. Note however, that step 9 is handled mostly by Golang's crypto/tls library, but the callbacks to get the signature were written as part of this project.
-
-![](./doc/Pictures/sd_medical_app_usage.svg)
-
 ## Prerequisites
 
 ### Software
@@ -179,60 +169,6 @@ The purpose of this section is to provide a rationale for certain design decisio
 
 The following sections provide more details on the structure of each part of this project.
 
-### C++
-
-There are two main parts to the C++ code. The first part ("iot-safe-middleware") was written by Thales, although a few modifications were applied. The second part is simply a wrapper of the code that was written to facilitate integration with Python (and for that matter, with any other kind of language). The project is built using cmake and the result is a shared library that can be loaded from Python.
-
-Here is a list of the main modifications that were made from the original `cpp/iot-safe-middleware`:
-
-- A folder (`cpp/iot-safe-middleware/iotsafelib/general`) was added to provide common functions to both the "common" and the "platform" subdirectories. For instance, things like logs and some high level constants were added.
-- Logs were added in some places within the script to control verbosity.
-- Basic timeouts for commands were added to avoid crashing the modem on some commands.
-- The function "ROT::readFile" was changed to prevent crashes due to null pointers and to allow the caller to control memory allocation instead of the function itself.
-
-The rationale for creating a wrapper was mainly to have a few easy to use functions that could be called from any other language that can load a C library. Indeed, the wrappers themselves are only using C-types to facilitate the conversion. Here are the exported function prototypes:
-
-- ```c++
-  PY_ERR GetRandom( uint8_t* pu8Data, uint16_t u16dataLen, const char* pModemPort, uint8_t u8LogLevel )
-  ```
-
-- ```c++
-  PY_ERR GetCertificate(
-              uint32_t u32ContainerId,
-              uint16_t u16BufferSize,
-              uint8_t *pu8Cert,
-              uint16_t *pu16CertLen,
-              const char *pModemPort,
-              uint8_t u8LogLevel )
-  ```
-
-- ```c++
-  PY_ERR GetURLAndPort(
-              uint8_t *pu8UrlAndPortString,
-              uint16_t *pu16UrlAndPortLen,
-              const char *pModemPort,
-              uint8_t u8LogLevel )
-  ```
-
-- ```c++
-  PY_ERR GenerateSignature(
-              char *pu8Message,
-              uint16_t u16MessageLen,
-              uint8_t *pu8Signature,
-              uint16_t *pu16SignatureLen,
-              const char *pModemPort,
-              uint8_t u8LogLevel )
-  ```
-
-  ```c++
-  PY_ERR GenerateRawSignature(
-              char *pu8Message,
-              uint16_t u16MessageLen,
-              uint8_t *pu8Signature,
-              uint16_t *pu16SignatureLen,
-              const char *pModemPort,
-              uint8_t u8LogLevel )
-  ```
 
 ### Python
 
@@ -277,9 +213,3 @@ For these reasons, Golang was chosen to provide a proof of concept on how to est
 https://github.com/TELUS-Emerging-IoT/Quectel-BG96-Firmware-Upgrade
 
 - Also, the Cinterion modem might also require a firmware update to function correctly.  Watch this space for the fix to be posted soonly.
-
-## Licensing Information
-
-This project makes use of Python, GoLang, and code developed by Thales.
-
-Thales code located here: https://github.com/ThalesGroup/iot-safe-middleware
